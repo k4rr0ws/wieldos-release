@@ -1,0 +1,1 @@
+import{a as e,o as t}from"./BKbxTPW3.js";import"./xihTtKlq.js";import{i as n}from"./DgIwB75n.js";var r=new Set([`$$slots`,`$$events`,`$$legacy`]);function i(i,a){let o=e(a,r),s=[[`path`,{d:`M2 5h20`}],[`path`,{d:`M6 12h12`}],[`path`,{d:`M9 19h6`}]];n(i,t({name:`list-filter`},()=>o,{get iconNode(){return s}}))}export{i as t};

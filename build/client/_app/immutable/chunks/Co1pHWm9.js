@@ -1,0 +1,1 @@
+import{a as e,o as t}from"./BKbxTPW3.js";import"./xihTtKlq.js";import{i as n}from"./DgIwB75n.js";var r=new Set([`$$slots`,`$$events`,`$$legacy`]);function i(i,a){let o=e(a,r),s=[[`line`,{x1:`10`,x2:`14`,y1:`2`,y2:`2`}],[`line`,{x1:`12`,x2:`15`,y1:`14`,y2:`11`}],[`circle`,{cx:`12`,cy:`14`,r:`8`}]];n(i,t({name:`timer`},()=>o,{get iconNode(){return s}}))}export{i as t};
