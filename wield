@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+# WieldOS CLI v0.0.1
+# Usage: ./wield <command>
+#
+#   start    Start the WieldOS container
+#   stop     Stop the WieldOS container
+#   restart  Restart the WieldOS container
+#   logs     Follow container logs
+#   install  First-time setup and start
+#   update   Check for updates and apply if available
+#   backup   Snapshot data/ to backups/
+#   verify   Check build integrity against release manifest
+#   status   Show running container status
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT"
+
+cmd="${1:-}"
+
+# --- colors ------------------------------------------------------------------
+
+BOLD="\033[1m"
+DIM="\033[2m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+CYAN="\033[36m"
+RED="\033[31m"
+RESET="\033[0m"
+
+info()    { echo -e "${CYAN}${BOLD}[wield]${RESET} $*"; }
+success() { echo -e "${GREEN}${BOLD}[wield]${RESET} $*"; }
+warn()    { echo -e "${YELLOW}${BOLD}[wield]${RESET} $*"; }
+error()   { echo -e "${RED}${BOLD}[wield]${RESET} $*"; }
+
+# --- docker pre-flight -------------------------------------------------------
+
+if ! command -v docker >/dev/null 2>&1; then
+  error "Docker is not installed."
+  echo ""
+  echo -e "  Install it with:"
+  echo -e "  ${DIM}curl -fsSL https://get.docker.com | sh${RESET}"
+  echo ""
+  echo -e "  Or visit: ${CYAN}https://docs.docker.com/get-docker/${RESET}"
+  exit 1
+fi
+
+if ! docker info >/dev/null 2>&1; then
+  error "Cannot connect to the Docker daemon."
+  echo ""
+  echo -e "  ${BOLD}How would you like to fix this?${RESET}"
+  echo ""
+
+  PS3=$'\n  Enter a number: '
+  options=(
+    "Run this command with sudo"
+    "Add me to the docker group  (permanent — requires logout)"
+    "Start the Docker daemon"
+    "Exit"
+  )
+
+  select opt in "${options[@]}"; do
+    echo ""
+    case $opt in
+      "Run this command with sudo")
+        exec sudo "$0" ${cmd:+"$cmd"}
+        ;;
+      "Add me to the docker group  (permanent — requires logout)")
+        sudo usermod -aG docker "$USER"
+        success "Done. Log out and back in, then re-run ${BOLD}./wield${RESET}."
+        exit 0
+        ;;
+      "Start the Docker daemon")
+        sudo systemctl start docker
+        success "Docker started."
+        echo ""
+        break
+        ;;
+      "Exit")
+        exit 0
+        ;;
+      *)
+        warn "Please enter a number from the list."
+        ;;
+    esac
+  done
+fi
+
+dc() {
+  if docker compose version >/dev/null 2>&1; then docker compose "$@";
+  elif command -v docker-compose >/dev/null 2>&1; then docker-compose "$@";
+  else
+    error "Docker Compose plugin not found."
+    echo ""
+    echo -e "  Install it with: ${DIM}sudo apt-get install docker-compose-plugin${RESET}"
+    echo -e "  Or visit: ${CYAN}https://docs.docker.com/compose/install/${RESET}"
+    exit 1
+  fi
+}
+
+case "$cmd" in
+  start)
+    info "starting…"
+    dc -f compose/docker-compose.yml up -d
+    success "running on ${CYAN}http://localhost:3000${RESET}"
+    ;;
+
+  stop)
+    info "stopping…"
+    dc -f compose/docker-compose.yml down
+    success "stopped."
+    ;;
+
+  restart)
+    info "restarting…"
+    dc -f compose/docker-compose.yml down
+    dc -f compose/docker-compose.yml up -d
+    success "running on ${CYAN}http://localhost:3000${RESET}"
+    ;;
+
+  logs)
+    dc -f compose/docker-compose.yml logs -f
+    ;;
+
+  install)
+    exec ./scripts/install.sh
+    ;;
+
+  update)
+    exec ./scripts/update.sh
+    ;;
+
+  verify)
+    exec ./scripts/verify.sh
+    ;;
+
+  backup)
+    mkdir -p backups
+    ts="$(date +%Y%m%d-%H%M%S)"
+    out="backups/backup-${ts}.tar.gz"
+    if [ ! -d data ]; then
+      error "no data/ directory found — nothing to back up."
+      exit 1
+    fi
+    info "backing up data/ → ${out}"
+    tar -czf "$out" data
+    success "done. $(du -sh "$out" | cut -f1)"
+    ;;
+
+  status)
+    dc -f compose/docker-compose.yml ps
+    ;;
+
+  *)
+    echo ""
+    echo -e "${BOLD}WieldOS v0.0.1${RESET}"
+    echo ""
+    echo -e "${DIM}Usage:${RESET} ./wield ${CYAN}<command>${RESET}"
+    echo ""
+    echo -e "  ${CYAN}${BOLD}start${RESET}    Start the container"
+    echo -e "  ${CYAN}${BOLD}stop${RESET}     Stop the container"
+    echo -e "  ${CYAN}${BOLD}restart${RESET}  Restart the container"
+    echo -e "  ${CYAN}${BOLD}logs${RESET}     Follow container logs"
+    echo -e "  ${CYAN}${BOLD}status${RESET}   Show container status"
+    echo -e "  ${CYAN}${BOLD}install${RESET}  First-time setup and start"
+    echo -e "  ${CYAN}${BOLD}update${RESET}   Check for updates and apply"
+    echo -e "  ${CYAN}${BOLD}backup${RESET}   Snapshot data/ to backups/"
+    echo -e "  ${CYAN}${BOLD}verify${RESET}   Check build integrity"
+    echo ""
+    exit 1
+    ;;
+esac

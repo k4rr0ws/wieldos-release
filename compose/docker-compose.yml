@@ -1,0 +1,27 @@
+# WieldOS docker-compose v0.0.1
+# Run from the release root: docker compose -f compose/docker-compose.yml up -d
+services:
+  wieldos:
+    build:
+      context: ../dashboard
+      dockerfile: Dockerfile
+    image: wieldos:latest
+    container_name: wieldos
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:${HOST_PORT:-3000}:3000"
+    environment:
+      - ORIGIN=${ORIGIN:-http://localhost:3000}
+    env_file:
+      - path: ../.env
+        required: false
+    volumes:
+      - ../data:/app/data
+      - ../plugins:/app/plugins
+      - ../backups:/app/backups
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', r => process.exit(r.statusCode < 500 ? 0 : 1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

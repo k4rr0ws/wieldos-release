@@ -1,37 +1,54 @@
-# WieldOS — Release
+# WieldOS v0.0.1
 
-Prebuilt, deployable WieldOS Dashboard. Generated from the source repo by
-`scripts/package-release.js`; do not edit these files by hand — change the source
-and re-run `npm run build`.
+Orchestrate intelligence.
 
-## Run with Docker (recommended)
+## Requirements
 
-```bash
-cp .env.example .env      # optionally set ANTHROPIC_API_KEY before first boot
-docker compose up -d
-docker compose logs -f
-```
+- [Docker](https://docs.docker.com/get-docker/) with the Compose plugin
+- Port 3000 available (configurable via `PORT` in `.env`)
 
-## Run on bare metal (Node.js 24)
+## Install
 
 ```bash
-cp .env.example .env
-./start.sh                # installs prod deps on first run, then starts
+./wield install
 ```
 
-The server listens on `http://0.0.0.0:3000`. Put Caddy or Nginx in front for HTTPS.
+Creates runtime directories, generates a starter `.env`, builds the Docker image, and starts the container. Edit `.env` before exposing to the internet.
 
-## Configuration
+## Commands
 
-Almost everything is configured in the app (Settings + Instances) and stored in
-the SQLite database under `data/`. `.env` only holds bootstrap values and an
-optional one-time first-boot seed — see `.env.example`.
+| Command | Description |
+|---|---|
+| `./wield start` | Start the container |
+| `./wield stop` | Stop the container |
+| `./wield restart` | Restart the container |
+| `./wield logs` | Follow live logs |
+| `./wield status` | Show container status |
+| `./wield install` | First-time setup and start |
+| `./wield update` | Check for updates and apply |
+| `./wield backup` | Snapshot `data/` to `backups/` |
+| `./wield verify` | Verify build integrity |
 
-## Data & backups
+## Update
 
-`data/` holds the SQLite database (settings, secrets, agent state) and uploaded
-avatars. Back it up regularly and treat those backups as sensitive.
+```bash
+./wield update
+```
 
-## Schema migrations
+Checks for a newer release, backs up `data/`, applies the update, and restarts. Your data, plugins, and `.env` are preserved.
 
-Migrations run automatically at startup — there is nothing to run by hand.
+## Data
+
+All application state lives in `data/`. Back it up regularly — it contains your database, settings, and secrets.
+
+```bash
+./wield backup   # creates backups/backup-<timestamp>.tar.gz
+```
+
+## Verify
+
+```bash
+./wield verify
+```
+
+Recomputes the `dashboard/build/` hash and checks it against `manifests/release.json`. Run after install or update to confirm the build has not been modified.
