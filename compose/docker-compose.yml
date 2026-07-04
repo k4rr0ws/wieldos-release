@@ -9,7 +9,7 @@ services:
     container_name: wieldos
     restart: unless-stopped
     ports:
-      - "0.0.0.0:${HOST_PORT:-3000}:3000"
+      - "${BIND_HOST:-0.0.0.0}:${HOST_PORT:-3000}:3000"
     environment:
       - ORIGIN=${ORIGIN:-http://localhost:3000}
     env_file:

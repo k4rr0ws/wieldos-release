@@ -15,6 +15,9 @@ ORIGIN=http://localhost:3000
 
 # Uncomment to change the host port Docker binds to (default 3000).
 # HOST_PORT=3000
+
+# Uncomment to change the host interface Docker binds to (default all interfaces).
+# BIND_HOST=127.0.0.1
 EOF
   echo "[install] created .env — update ORIGIN before exposing to the internet."
 fi
